@@ -1,7 +1,10 @@
-flask==2.3.3
-fastapi==0.101.0
-uvicorn==0.25.0
-pytest==8.2.0
-flake8==6.1.0
-bandit==1.8.6
-flake8-html==0.4.3
+fastapi[all]==0.111.2
+flask==2.3.4
+pytest==8.4.2
+pytest-json-report==1.5.0
+requests==2.31.0
+httpx==0.26.1
+pytest-asyncio==0.21.0
+bandit==1.7.5
+python-dotenv==1.0.0
+pydantic==2.5.2
