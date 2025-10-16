@@ -1,13 +1,16 @@
-name: Python CI + Docker Push
+name: Python CI/CD Pipeline
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  build-test-and-push:
-    runs-on: ubuntu-latest
+  build-test-scan:
+    runs-on: ubuntu-latest   # using Linux runner for simplicity
 
     env:
       REPORTS_DIR: reports
@@ -15,10 +18,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: 3.11
 
@@ -28,31 +31,32 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Create report directories
+      - name: Create reports directories
         run: |
           mkdir -p $REPORTS_DIR/unittest_reports
-          mkdir -p $REPORTS_DIR/banditreports
           mkdir -p $REPORTS_DIR/flake8_reports
+          mkdir -p $REPORTS_DIR/banditreports
 
-      - name: Run tests + lint + bandit
+      - name: Run Unit Tests with JSON Report
+        shell: bash
         run: |
           timestamp=$(date +"%Y%m%d_%H%M%S")
+          export PYTHONPATH=$PYTHONPATH:$PWD
           pytest fastapi_todo_app/tests flask_hello_app/tests flask_users_app/tests \
               --json-report \
               --json-report-file=$REPORTS_DIR/unittest_reports/unit_test_report_$timestamp.json
-          flake8 flask_hello_app fastapi_todo_app flask_users_app --format=html --htmldir=$REPORTS_DIR/flake8_reports
-          bandit -r flask_hello_app fastapi_todo_app flask_users_app -f json -o $REPORTS_DIR/banditreports/bandit_report_$timestamp.json
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Run Flake8 Linting
+        shell: bash
+        run: |
+          flake8 flask_hello_app fastapi_todo_app flask_users_app \
+              --format=html \
+              --htmldir=$REPORTS_DIR/flake8_reports
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: docker/Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest
+      - name: Run Bandit Security Scan
+        shell: bash
+        run: |
+          timestamp=$(date +"%Y%m%d_%H%M%S")
+          bandit -r flask_hello_app fastapi_todo_app flask_users_app \
+              -f json \
+              -o $REPORTS_DIR/banditreports/bandit_report_$timestamp.json
