@@ -1,21 +1,23 @@
-# Use official Python image
+# Use Python 3.11 base image
 FROM python:3.11-slim
 
-# Set working directory inside container
+# Set working directory
 WORKDIR /app
 
-# Copy the entire repo into the container
-COPY . /app
+# Copy requirements file
+COPY ../requirements.txt .
 
-# Upgrade pip and install dependencies
-RUN pip install --upgrade pip \
-    && pip install bandit pytest pytest-json-report fastapi[all] flask requests
+# Install dependencies
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
-# Create folders for reports
-RUN mkdir -p reports/banditreports reports/unittest_reports
+# Copy the rest of your project
+COPY ../ ./
 
-# Set environment variable for Python path inside container (optional)
-ENV PYTHONPATH=/app
+# Expose port (example for FastAPI or Flask)
+EXPOSE 8000
 
-# Default command: run bash to allow manual execution
-CMD ["bash"]
+# Command to run your app (change as needed)
+# For FastAPI: uvicorn app.main:app --host 0.0.0.0 --port 8000
+# For Flask: python app.py
+CMD ["python", "app.py"]
