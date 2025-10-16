@@ -1,44 +1,58 @@
-name: Trivy Filesystem Scan
+name: Security and Unit Test Reports
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
-  trivy-scan:
-    runs-on: ubuntu-latest
+  security_and_tests:
+    runs-on: windows-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: '3.11'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install bandit trivy-python
+          pip install bandit pytest pytest-json-report fastapi[all] flask requests
 
-      - name: Create reports folder
+      # ---------------- Bandit Scan ----------------
+      - name: Run Bandit Security Scan
         run: |
-          mkdir -p reports/trivy_reports
+          mkdir -p reports\banditreports
+          $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+          bandit -r . -f json -o reports\banditreports\bandit_report_$timestamp.json
+        continue-on-error: true
 
-      - name: Run Trivy filesystem scan
+      # ---------------- Unit Tests ----------------
+      - name: Run Unit Tests for FastAPI app
         run: |
-          TIMESTAMP=$(date +'%Y%m%d_%H%M%S')
-          trivy fs . --scanners vuln --format json --output reports/trivy_reports/trivy_fs_report_$TIMESTAMP.json
+          mkdir -p reports\unittest_reports
+          $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+          $env:PYTHONPATH = "$PWD\fastapi_todo_app"
+          pytest fastapi_todo_app/tests --json-report --json-report-file=reports/unittest_reports/unit_test_report_fastapi_$timestamp.json
+        continue-on-error: true
 
-      - name: Commit and push reports
+      - name: Run Unit Tests for Flask Hello App
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git add reports/trivy_reports/*
-          git commit -m "Add Trivy FS report $TIMESTAMP" || echo "No changes to commit"
-          git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          mkdir -p reports\unittest_reports
+          $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+          $env:PYTHONPATH = "$PWD\flask_hello_app"
+          pytest flask_hello_app/tests --json-report --json-report-file=reports/unittest_reports/unit_test_report_flask_hello_$timestamp.json
+        continue-on-error: true
+
+      - name: Run Unit Tests for Flask Users App
+        run: |
+          mkdir -p reports\unittest_reports
+          $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+          $env:PYTHONPATH = "$PWD\flask_users_app"
+          pytest flask_users_app/tests --json-report --json-report-file=reports/unittest_reports/unit_test_report_flask_users_$timestamp.json
+        continue-on-error: true
