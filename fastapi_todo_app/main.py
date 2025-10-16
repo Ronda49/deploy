@@ -4,22 +4,15 @@ app = FastAPI()
 
 todos = []
 
+
 @app.get("/")
-def root():
-    return {"message": "Welcome to FastAPI Todo App"}
+def read_root():
+    """Return a welcome message."""
+    return {"message": "Welcome to FastAPI Todo app"}
 
-@app.get("/todos")
-def get_todos():
-    return {"todos": todos}
 
-@app.post("/todos")
-def add_todo(item: str):
+@app.post("/todo/")
+def create_todo(item: str):
+    """Add a new todo item."""
     todos.append(item)
-    return {"message": f"Added '{item}' to list"}
-
-@app.delete("/todos/{index}")
-def delete(index: int):
-    if 0 <= index < len(todos):
-        deleted = todos.pop(index)
-        return {"message": f"Deleted '{deleted}'"}
-    return {"error": "Invalid index"}
+    return {"item": item}

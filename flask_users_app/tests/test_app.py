@@ -1,18 +1,25 @@
-from app import app
-import json
+import unittest  # Stdlib
 
-def test_get_users():
-    client = app.test_client()
-    response = client.get('/users')
-    assert response.status_code == 200
-    data = response.get_json()
-    assert isinstance(data, list)
-    assert "name" in data[0]
+from app import app  # Local
 
-def test_add_user():
-    client = app.test_client()
-    new_user = {"id": 3, "name": "Kumar", "email": "kumar@example.com"}
-    response = client.post('/users', data=json.dumps(new_user), content_type='application/json')
-    assert response.status_code == 201
-    data = response.get_json()
-    assert data["user"]["name"] == "Kumar"
+
+class TestFlaskUsersApp(unittest.TestCase):
+    """Unit tests for Flask users app."""
+
+    def setUp(self):
+        self.client = app.test_client()
+
+    def test_add_user(self):
+        response = self.client.get("/users/add/John")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {"name": "John"})
+
+    def test_get_users(self):
+        self.client.get("/users/add/John")
+        response = self.client.get("/users")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {"users": ["John"]})
+
+
+if __name__ == "__main__":
+    unittest.main()

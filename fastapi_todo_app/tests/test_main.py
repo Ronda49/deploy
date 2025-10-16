@@ -1,21 +1,28 @@
-from fastapi.testclient import TestClient
-from main import app
+import unittest  # Stdlib
 
-client = TestClient(app)
+from fastapi.testclient import TestClient  # Third-party
 
-def test_root():
-    response = client.get("/")
-    assert response.status_code == 200
-    assert response.json() == {"message": "Welcome to FastAPI Todo App"}
+from main import app  # Local
 
-def test_add_and_get_todo():
-    # Add a todo
-    response = client.post("/todos", params={"item": "Buy milk"})
-    assert response.status_code == 200
-    assert "Added" in response.json()["message"]
 
-    # Get todos
-    response = client.get("/todos")
-    data = response.json()
-    assert "todos" in data
-    assert "Buy milk" in data["todos"]
+class TestFastAPITodoApp(unittest.TestCase):
+    """Unit tests for FastAPI Todo app."""
+
+    def setUp(self):
+        self.client = TestClient(app)
+
+    def test_read_root(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(), {"message": "Welcome to FastAPI Todo app"}
+        )
+
+    def test_create_todo(self):
+        response = self.client.post("/todo/", json="Test task")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"item": "Test task"})
+
+
+if __name__ == "__main__":
+    unittest.main()
