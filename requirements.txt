@@ -4,3 +4,4 @@ uvicorn==0.25.0
 pytest==8.2.0
 flake8==6.1.0
 bandit==1.8.6
+flake8-html==0.4.3
